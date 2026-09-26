@@ -1,4 +1,4 @@
-// Increase body parser limit to 10MB so base64 images don't get truncated
+// Increase body limit to 10mb for syllabus images
 export const config = {
   api: {
     bodyParser: {
@@ -8,64 +8,64 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // Allow Cross-Origin Requests (CORS)
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-goog-api-key');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  // Verify server-side API key from Vercel environment variables
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ 
-      error: 'GEMINI_API_KEY is not configured in Vercel Environment Variables.' 
-    });
+    return res.status(500).json({ error: 'GEMINI_API_KEY is missing in Vercel Environment Variables.' });
   }
 
   const payload = req.body;
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
-  let lastErrorDetails = null;
+  if (!payload || !payload.contents) {
+    return res.status(400).json({ error: 'Request body must contain "contents" payload.' });
+  }
 
-  for (const model of models) {
+  // Active production models
+  const candidateModels = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
+  let errorsList = [];
+
+  for (const model of candidateModels) {
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey.trim(),
+        },
+        body: JSON.stringify(payload),
+      });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (response.ok) {
-        return res.status(200).json(data);
+        return res.status(200).json(responseData);
       } else {
-        lastErrorDetails = {
+        errorsList.push({
           model,
           status: response.status,
-          response: data,
-        };
+          google_error: responseData.error || responseData,
+        });
       }
     } catch (err) {
-      lastErrorDetails = {
-        model,
-        error: err.message,
-      };
+      errorsList.push({ model, network_error: err.message });
     }
   }
 
-  // Forward the actual error response from Google instead of a blank 500
+  // Return the exact upstream errors from Google so they are displayed on screen
   return res.status(500).json({
-    error: 'Failed to generate content from AI models.',
-    details: lastErrorDetails,
+    error: 'All AI models rejected the request.',
+    reasons: errorsList,
   });
 }
