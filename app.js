@@ -14,9 +14,6 @@ let generatedUnitsCache = {}; // Cache: { 0: [topicNotes], 1: [topicNotes], "ref
 let currentTab = 'examiner';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const savedKey = localStorage.getItem('test_gemini_key');
-  if (savedKey) document.getElementById('api-key').value = savedKey;
-
   document.getElementById('topics-list').addEventListener('input', (e) => {
     if (activeUnitIndex >= 0 && courseUnits[activeUnitIndex]) {
       const list = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
@@ -38,39 +35,20 @@ function logStatus(msg, isSuccess = true) {
   }
 }
 
-// Resilient API Call across active Gemini endpoints
-async function callGemini(key, payload) {
-  let targetModels = [];
-  try {
-    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    if (listRes.ok) {
-      const listData = await listRes.json();
-      targetModels = (listData.models || [])
-        .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-        .map(m => m.name.replace('models/', ''))
-        .filter(name => name.includes('flash') || name.includes('pro'));
-    }
-  } catch (e) {}
+// Secure proxy call to backend serverless function
+async function callGemini(payload) {
+  const res = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-  const fallbackList = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'];
-  targetModels = [...new Set([...targetModels, ...fallbackList])];
-
-  let lastErr = null;
-  for (const model of targetModels) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) return await res.json();
-      const errText = await res.text();
-      lastErr = new Error(`[${model}] ${res.status}: ${errText}`);
-    } catch (e) {
-      lastErr = e;
-    }
+  if (!res.ok) {
+    const errData = await res.text();
+    throw new Error(`API Error (${res.status}): ${errData}`);
   }
-  throw lastErr;
+
+  return await res.json();
 }
 
 // Render dynamic tabs: Unlimited units + Add Module + Textbooks
@@ -204,7 +182,7 @@ function switchTab(mode) {
   }
 }
 
-// Render the active unit's notes into the notebook canvas
+// Render active unit's notes into the notebook canvas
 function renderNotebook() {
   const canvas = document.getElementById('notebook-canvas');
   const unitPayload = generatedUnitsCache[activeUnitIndex];
@@ -317,17 +295,13 @@ function renderNotebook() {
 
 // Universal Batch Synthesizer: Runs all topics in active unit
 document.getElementById('btn-generate-unit').addEventListener('click', async () => {
-  const key = document.getElementById('api-key').value.trim();
   const subject = document.getElementById('subject-name').value.trim();
   const unit = document.getElementById('unit-name').value.trim();
   const topicsText = document.getElementById('topics-list').value.trim();
 
-  if (!key) return alert("Please enter your Gemini API Key.");
   const topics = topicsText.split(',').map(t => t.trim()).filter(Boolean);
   if (topics.length === 0) return alert("Please enter or scan at least one topic.");
 
-  localStorage.setItem('test_gemini_key', key);
-  
   courseUnits[activeUnitIndex].unit_name = unit;
   courseUnits[activeUnitIndex].topics = topics;
   renderUnitTabs();
@@ -379,7 +353,7 @@ Output strictly valid JSON with this schema:
 }`;
 
     try {
-      const data = await callGemini(key, {
+      const data = await callGemini({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { response_mime_type: "application/json" }
       });
@@ -396,7 +370,7 @@ Output strictly valid JSON with this schema:
   logStatus(`${unit} Completed (${topics.length} topics)!`, true);
 });
 
-// Full Syllabus Image Scanner: Extracts unlimited units and reference books
+// Full Syllabus Image Scanner with Client-Side Canvas Compression
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 
@@ -409,25 +383,41 @@ fileInput.addEventListener('change', (e) => {
 });
 
 document.getElementById('btn-parse-image').addEventListener('click', async () => {
-  const key = document.getElementById('api-key').value.trim();
   const file = fileInput.files[0];
-  if (!key || !file) return alert("Select an image and enter your Gemini API key.");
+  if (!file) return alert("Select an image first.");
 
-  localStorage.setItem('test_gemini_key', key);
-  logStatus("Reading syllabus file...");
+  logStatus("Reading and compressing image...", false);
 
+  // Compress the image down using an in-memory HTML canvas to avoid payload limits
   const base64 = await new Promise((res, rej) => {
     const reader = new FileReader();
-    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const scale = img.width > MAX_WIDTH ? (MAX_WIDTH / img.width) : 1;
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // JPEG format at 75% quality maintains readability while keeping payload under ~300KB
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        res(compressedDataUrl.split(',')[1]);
+      };
+      img.onerror = rej;
+      img.src = e.target.result;
+    };
     reader.onerror = rej;
     reader.readAsDataURL(file);
   });
 
-  logStatus("Extracting all units & reference books with Gemini Vision...", false);
+  logStatus("Extracting syllabus with Gemini Vision...", false);
 
   try {
-    const mime = file.type && file.type.length > 0 ? file.type : 'image/png';
-    const data = await callGemini(key, {
+    const data = await callGemini({
       contents: [{
         parts: [
           { 
@@ -451,7 +441,7 @@ Output strictly valid JSON with this schema:
   ]
 }` 
           },
-          { inline_data: { mime_type: mime, data: base64 } }
+          { inline_data: { mime_type: 'image/jpeg', data: base64 } }
         ]
       }],
       generationConfig: { response_mime_type: "application/json" }
