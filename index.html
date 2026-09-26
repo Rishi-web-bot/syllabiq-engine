@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SyllabiQ — Universal Academic Notes & Syllabus Synthesizer</title>
+  
+  <!-- Embedded Vector Brand Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23fbbf24'/><path d='M8 9a2 2 0 0 1 2-2h12v18H10a2 2 0 0 1-2-2V9z' fill='%2309090b'/><path d='M10 7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2V7h-2z' fill='%23f59e0b'/><path d='M23 11l1.5-2.5L27 7l-2.5-1.5L23 3l-1.5 2.5L19 7l2.5 1.5z' fill='%23ffffff'/></svg>" />
+
+  <!-- Google Fonts: Handwritten Fonts & Clean UI Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans selection:bg-amber-400 selection:text-zinc-950">
+
+  <!-- Top Navigation Bar with Logo -->
+  <header class="border-b border-zinc-800 bg-zinc-900/90 px-6 py-3.5 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3.5">
+      <!-- SyllabiQ Custom SVG Logo -->
+      <div class="relative flex items-center justify-center">
+        <svg class="w-9 h-9 rounded-xl shadow-md border border-amber-300/30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="#09090B"/>
+          <!-- Ruled Paper Base -->
+          <rect x="8" y="9" width="22" height="24" rx="3" fill="#F4F4F5" stroke="#E4E4E7" stroke-width="1.5"/>
+          <path d="M12 9V33" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="2 2"/>
+          <line x1="15" y1="15" x2="26" y2="15" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="15" y1="20" x2="24" y2="20" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="15" y1="25" x2="22" y2="25" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- AI Spark Element -->
+          <path d="M28 5L29.5 9.5L34 11L29.5 12.5L28 17L26.5 12.5L22 11L26.5 9.5L28 5Z" fill="#F59E0B"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-base tracking-tight text-white font-sans">SyllabiQ</span>
+          <span class="text-[10px] bg-amber-400/10 text-amber-400 border border-amber-400/20 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Engine v2.0</span>
+        </div>
+        <p class="text-[11px] text-zinc-400">Universal Syllabus & Handwritten Exam Synthesizer</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <button onclick="window.print()" class="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold rounded-md shadow-sm transition-all">
+        Export Print / PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Grid -->
+  <main class="max-w-[1650px] mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Left Configuration Panel (4 cols) -->
+    <aside class="lg:col-span-4 space-y-4">
+      
+      <!-- API Key Card -->
+      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-bold uppercase tracking-wider text-zinc-300">Google Gemini API Key</label>
+          <span class="text-[10px] text-emerald-400 font-medium">Free Tier Compatible</span>
+        </div>
+        <input type="password" id="api-key" placeholder="Paste AI Studio API Key..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 outline-none focus:border-amber-400 transition-colors" />
+        <p class="text-[11px] text-zinc-500">Free key available at <a href="https://aistudio.google.com/" target="_blank" class="text-amber-400 underline">aistudio.google.com</a></p>
+      </div>
+
+      <!-- Syllabus Image Upload / Scanner -->
+      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
+        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300">1. Scan Complete Syllabus / Book Index</label>
+        <div id="drop-zone" class="border border-dashed border-zinc-700 hover:border-amber-400 bg-zinc-950/40 p-4 rounded-lg text-center cursor-pointer transition-all">
+          <input type="file" id="file-input" accept="image/*" class="hidden" />
+          <p class="text-xs text-zinc-300 font-medium" id="file-name">Click or drop syllabus photo / xerox copy</p>
+          <span class="text-[10px] text-zinc-500 mt-1 block">Extracts Subject, All Modules, Topics & Reference Books</span>
+        </div>
+        <button id="btn-parse-image" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold rounded-lg text-zinc-200 border border-zinc-700 transition-colors">
+          Scan Syllabus Structure from Image
+        </button>
+      </div>
+
+      <!-- Syllabus Topics Configuration -->
+      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
+        <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300">2. Active Curriculum Unit Setup</label>
+        <div>
+          <label class="text-[11px] text-zinc-400">Subject / Course Name</label>
+          <input type="text" id="subject-name" placeholder="e.g. Constitutional Law / Power Electronics / Biochemistry" class="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-zinc-200 mt-1 focus:border-amber-400 outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] text-zinc-400">Unit / Module Title</label>
+          <input type="text" id="unit-name" placeholder="e.g. Unit 1: Fundamental Principles" class="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-zinc-200 mt-1 focus:border-amber-400 outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] text-zinc-400 flex justify-between">
+            <span>Topics in this Unit (Comma Separated)</span>
+            <span id="topic-count" class="text-amber-400 font-bold">0 Topics</span>
+          </label>
+          <textarea id="topics-list" rows="4" placeholder="Topic 1, Topic 2, Topic 3, Topic 4..." class="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-zinc-200 mt-1 focus:border-amber-400 outline-none"></textarea>
+        </div>
+        <button id="btn-generate-unit" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-extrabold text-xs rounded-lg shadow-sm transition-all">
+          ⚡ Synthesize Complete Unit Notes (All Topics)
+        </button>
+      </div>
+
+      <!-- Live Diagnostics -->
+      <div class="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl text-xs font-mono text-zinc-400">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-[10px] uppercase font-bold text-zinc-500">Pipeline Status</span>
+          <span id="status-badge" class="text-[10px] text-zinc-500">Idle</span>
+        </div>
+        <div id="debug-log" class="text-[11px] text-zinc-300 truncate">System initialized.</div>
+      </div>
+
+    </aside>
+
+    <!-- Right Notes Notebook Viewport (8 cols) -->
+    <section class="lg:col-span-8 flex flex-col gap-3">
+      
+      <!-- Unit Selection Bar (Unlimited Units + Textbooks) -->
+      <div class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-2 rounded-xl">
+        <div class="flex items-center gap-2 overflow-x-auto py-1 max-w-[80%]" id="unit-tabs-bar">
+          <span class="text-xs uppercase font-bold text-zinc-400 pl-1 whitespace-nowrap">Units:</span>
+          <!-- Dynamic Unit Tabs rendered by JS -->
+        </div>
+        <button id="btn-next-unit" onclick="goToNextUnit()" class="flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 px-3 py-1 bg-zinc-800 rounded-lg border border-zinc-700 whitespace-nowrap">
+          Next Unit ➔
+        </button>
+      </div>
+
+      <!-- Mode Tabs (Exam Sheet / Friendly / Viva) -->
+      <div class="flex bg-zinc-900 border border-zinc-800 p-1.5 rounded-xl gap-1">
+        <button onclick="switchTab('examiner')" id="tab-examiner" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-amber-400 text-zinc-950 transition-all">
+          🔴 Full Exam Sheet (Architectures &bull; Pros/Cons &bull; Rubrics)
+        </button>
+        <button onclick="switchTab('friendly')" id="tab-friendly" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-400 hover:text-zinc-200 transition-all">
+          🟢 Friendly (Intuitive Analogies)
+        </button>
+        <button onclick="switchTab('viva')" id="tab-viva" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-400 hover:text-zinc-200 transition-all">
+          🟡 Viva Voce (Oral Defense)
+        </button>
+      </div>
+
+      <!-- Ruled Notebook Sheet Canvas -->
+      <div class="notebook-sheet shadow-2xl rounded-xl p-8 pl-24 min-h-[800px] border border-zinc-700/30 relative">
+        <div class="margin-label">SEMESTER EXAM RECORD</div>
+        <div id="notebook-canvas" class="notebook-text">
+          <h2 class="hand-title">No Notes Synthesized</h2>
+          <p class="mt-4">Upload a syllabus copy on the left panel or enter your course, unit, and topics list. Click <strong>"Synthesize Complete Unit Notes"</strong> to generate all definitions, visual schematics, classifications, trade-offs, and viva questions.</p>
+        </div>
+
+        <!-- Next Unit Footer Navigation -->
+        <div id="bottom-nav" class="mt-12 pt-6 border-t border-slate-300 flex justify-between items-center hidden">
+          <button onclick="goToPrevUnit()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all">
+            ⬅ Previous Unit
+          </button>
+          <button onclick="goToNextUnit()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow transition-all">
+            Proceed to Next Unit ➡
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
