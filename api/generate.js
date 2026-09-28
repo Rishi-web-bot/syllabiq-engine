@@ -16,20 +16,34 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in Vercel Environment Variables.' });
+    return res.status(500).json({ error: 'GEMINI_API_KEY is missing in Vercel environment variables.' });
   }
 
-  const payload = req.body;
+  let payload = req.body;
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+  }
+
   if (!payload || !payload.contents) {
-    return res.status(400).json({ error: 'Payload must contain contents.' });
+    return res.status(400).json({ error: 'Missing contents in request body.' });
   }
 
-  const models = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+  // Active models (including recommended 3.5 series)
+  const models = [
+    'gemini-3.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash'
+  ];
+
   let lastErr = null;
 
   for (const model of models) {
