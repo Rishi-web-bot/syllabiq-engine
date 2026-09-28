@@ -1,5 +1,12 @@
-module.exports = async function handler(req, res) {
-  // CORS
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-goog-api-key');
@@ -19,38 +26,33 @@ module.exports = async function handler(req, res) {
 
   const payload = req.body;
   if (!payload || !payload.contents) {
-    return res.status(400).json({ error: 'Missing payload contents.' });
+    return res.status(400).json({ error: 'Payload must contain contents.' });
   }
 
-  // Active verified models on Google AI Studio
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
-  let errorLog = [];
+  const models = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+  let lastErr = null;
 
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
-      
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
-
       if (response.ok) {
         return res.status(200).json(data);
-      } else {
-        errorLog.push({ model, status: response.status, details: data });
       }
+      lastErr = data;
     } catch (err) {
-      errorLog.push({ model, networkError: err.message });
+      lastErr = { message: err.message };
     }
   }
 
-  // Send back full detail of why Google rejected it
   return res.status(500).json({
-    error: 'AI Generation Failed',
-    reasons: errorLog
+    error: 'Google API generation failed.',
+    details: lastErr,
   });
-};
+}
