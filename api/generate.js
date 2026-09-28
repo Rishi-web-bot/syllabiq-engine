@@ -1,14 +1,5 @@
-// Increase body limit to 10mb for syllabus images
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
-
-export default async function handler(req, res) {
-  // CORS Headers
+module.exports = async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-goog-api-key');
@@ -23,49 +14,43 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is missing in Vercel Environment Variables.' });
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in Vercel Environment Variables.' });
   }
 
   const payload = req.body;
   if (!payload || !payload.contents) {
-    return res.status(400).json({ error: 'Request body must contain "contents" payload.' });
+    return res.status(400).json({ error: 'Missing payload contents.' });
   }
 
-  // Active production models
-  const candidateModels = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
-  let errorsList = [];
+  // Active verified models on Google AI Studio
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+  let errorLog = [];
 
-  for (const model of candidateModels) {
+  for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey.trim(),
-        },
-        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const responseData = await response.json();
+      const data = await response.json();
 
       if (response.ok) {
-        return res.status(200).json(responseData);
+        return res.status(200).json(data);
       } else {
-        errorsList.push({
-          model,
-          status: response.status,
-          google_error: responseData.error || responseData,
-        });
+        errorLog.push({ model, status: response.status, details: data });
       }
     } catch (err) {
-      errorsList.push({ model, network_error: err.message });
+      errorLog.push({ model, networkError: err.message });
     }
   }
 
-  // Return the exact upstream errors from Google so they are displayed on screen
+  // Send back full detail of why Google rejected it
   return res.status(500).json({
-    error: 'All AI models rejected the request.',
-    reasons: errorsList,
+    error: 'AI Generation Failed',
+    reasons: errorLog
   });
-}
+};
