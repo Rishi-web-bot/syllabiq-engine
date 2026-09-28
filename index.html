@@ -18,7 +18,7 @@
 <body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans selection:bg-amber-400 selection:text-zinc-950">
 
   <!-- Top Navigation Bar with Logo -->
-  <header class="border-b border-zinc-800 bg-zinc-900/90 px-6 py-3.5 flex justify-between items-center sticky top-0 z-50">
+  <header class="border-b border-zinc-800 bg-zinc-900/90 px-6 py-3.5 flex justify-between items-center sticky top-0 z-50 backdrop-blur">
     <div class="flex items-center gap-3.5">
       <!-- SyllabiQ Custom SVG Logo -->
       <div class="relative flex items-center justify-center">
@@ -39,12 +39,12 @@
           <span class="font-extrabold text-base tracking-tight text-white font-sans">SyllabiQ</span>
           <span class="text-[10px] bg-amber-400/10 text-amber-400 border border-amber-400/20 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Engine v2.0</span>
         </div>
-        <p class="text-[11px] text-zinc-400">Universal Syllabus & Handwritten Exam Synthesizer</p>
+        <p class="text-[11px] text-zinc-400">Universal Syllabus &amp; Handwritten Exam Synthesizer</p>
       </div>
     </div>
     
     <div class="flex items-center gap-3">
-      <button onclick="window.print()" class="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold rounded-md shadow-sm transition-all">
+      <button onclick="window.print()" class="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold rounded-md shadow-sm transition-all cursor-pointer">
         Export Print / PDF
       </button>
     </div>
@@ -56,25 +56,15 @@
     <!-- Left Configuration Panel (4 cols) -->
     <aside class="lg:col-span-4 space-y-4">
       
-      <!-- API Key Card -->
-      <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-2">
-        <div class="flex justify-between items-center">
-          <label class="text-xs font-bold uppercase tracking-wider text-zinc-300">Google Gemini API Key</label>
-          <span class="text-[10px] text-emerald-400 font-medium">Free Tier Compatible</span>
-        </div>
-        <input type="password" id="api-key" placeholder="Paste AI Studio API Key..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 outline-none focus:border-amber-400 transition-colors" />
-        <p class="text-[11px] text-zinc-500">Free key available at <a href="https://aistudio.google.com/" target="_blank" class="text-amber-400 underline">aistudio.google.com</a></p>
-      </div>
-
       <!-- Syllabus Image Upload / Scanner -->
       <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl space-y-3">
         <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300">1. Scan Complete Syllabus / Book Index</label>
         <div id="drop-zone" class="border border-dashed border-zinc-700 hover:border-amber-400 bg-zinc-950/40 p-4 rounded-lg text-center cursor-pointer transition-all">
           <input type="file" id="file-input" accept="image/*" class="hidden" />
           <p class="text-xs text-zinc-300 font-medium" id="file-name">Click or drop syllabus photo / xerox copy</p>
-          <span class="text-[10px] text-zinc-500 mt-1 block">Extracts Subject, All Modules, Topics & Reference Books</span>
+          <span class="text-[10px] text-zinc-500 mt-1 block">Extracts Subject, All Modules, Topics &amp; Reference Books</span>
         </div>
-        <button id="btn-parse-image" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold rounded-lg text-zinc-200 border border-zinc-700 transition-colors">
+        <button id="btn-parse-image" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold rounded-lg text-zinc-200 border border-zinc-700 transition-colors cursor-pointer">
           Scan Syllabus Structure from Image
         </button>
       </div>
@@ -97,7 +87,7 @@
           </label>
           <textarea id="topics-list" rows="4" placeholder="Topic 1, Topic 2, Topic 3, Topic 4..." class="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-zinc-200 mt-1 focus:border-amber-400 outline-none"></textarea>
         </div>
-        <button id="btn-generate-unit" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-extrabold text-xs rounded-lg shadow-sm transition-all">
+        <button id="btn-generate-unit" class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-extrabold text-xs rounded-lg shadow-sm transition-all cursor-pointer">
           ⚡ Synthesize Complete Unit Notes (All Topics)
         </button>
       </div>
@@ -108,7 +98,7 @@
           <span class="text-[10px] uppercase font-bold text-zinc-500">Pipeline Status</span>
           <span id="status-badge" class="text-[10px] text-zinc-500">Idle</span>
         </div>
-        <div id="debug-log" class="text-[11px] text-zinc-300 truncate">System initialized.</div>
+        <div id="debug-log" class="text-[11px] text-zinc-300 truncate">System ready.</div>
       </div>
 
     </aside>
@@ -122,20 +112,20 @@
           <span class="text-xs uppercase font-bold text-zinc-400 pl-1 whitespace-nowrap">Units:</span>
           <!-- Dynamic Unit Tabs rendered by JS -->
         </div>
-        <button id="btn-next-unit" onclick="goToNextUnit()" class="flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 px-3 py-1 bg-zinc-800 rounded-lg border border-zinc-700 whitespace-nowrap">
+        <button id="btn-next-unit" onclick="goToNextUnit()" class="flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 px-3 py-1 bg-zinc-800 rounded-lg border border-zinc-700 whitespace-nowrap cursor-pointer">
           Next Unit ➔
         </button>
       </div>
 
       <!-- Mode Tabs (Exam Sheet / Friendly / Viva) -->
       <div class="flex bg-zinc-900 border border-zinc-800 p-1.5 rounded-xl gap-1">
-        <button onclick="switchTab('examiner')" id="tab-examiner" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-amber-400 text-zinc-950 transition-all">
+        <button onclick="switchTab('examiner')" id="tab-examiner" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-amber-400 text-zinc-950 transition-all cursor-pointer">
           🔴 Full Exam Sheet (Architectures &bull; Pros/Cons &bull; Rubrics)
         </button>
-        <button onclick="switchTab('friendly')" id="tab-friendly" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-400 hover:text-zinc-200 transition-all">
+        <button onclick="switchTab('friendly')" id="tab-friendly" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer">
           🟢 Friendly (Intuitive Analogies)
         </button>
-        <button onclick="switchTab('viva')" id="tab-viva" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-400 hover:text-zinc-200 transition-all">
+        <button onclick="switchTab('viva')" id="tab-viva" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer">
           🟡 Viva Voce (Oral Defense)
         </button>
       </div>
@@ -150,10 +140,10 @@
 
         <!-- Next Unit Footer Navigation -->
         <div id="bottom-nav" class="mt-12 pt-6 border-t border-slate-300 flex justify-between items-center hidden">
-          <button onclick="goToPrevUnit()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all">
+          <button onclick="goToPrevUnit()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer">
             ⬅ Previous Unit
           </button>
-          <button onclick="goToNextUnit()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow transition-all">
+          <button onclick="goToNextUnit()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow transition-all cursor-pointer">
             Proceed to Next Unit ➡
           </button>
         </div>
