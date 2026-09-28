@@ -1,3 +1,23 @@
+// Enforce 5 free unit notes generations per device per day
+function checkAndIncrementQuota() {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = JSON.parse(localStorage.getItem('syllabora_quota') || '{}');
+
+  if (data.date !== today) {
+    localStorage.setItem('syllabora_quota', JSON.stringify({ date: today, count: 1 }));
+    return true;
+  }
+
+  if (data.count >= 5) {
+    alert("Free daily limit reached (5/5). Your quota will reset at midnight tomorrow!");
+    return false;
+  }
+
+  data.count += 1;
+  localStorage.setItem('syllabora_quota', JSON.stringify(data));
+  return true;
+}
+
 // Universal Multi-Unit State
 let courseMetadata = {
   subject: "",
@@ -295,6 +315,9 @@ function renderNotebook() {
 
 // Universal Batch Synthesizer: Runs all topics in active unit
 document.getElementById('btn-generate-unit').addEventListener('click', async () => {
+  // Enforce 5 free unit notes generations per device per day
+  if (!checkAndIncrementQuota()) return;
+
   const subject = document.getElementById('subject-name').value.trim();
   const unit = document.getElementById('unit-name').value.trim();
   const topicsText = document.getElementById('topics-list').value.trim();
