@@ -18,6 +18,7 @@
 - **Continuous Ruled Notebook Aesthetic:** Realistic handwritten look with margin headers, lined paper canvas, and print-ready PDF export.
 - **Zero-Config Secure Proxy:** Serverless architecture proxies requests to Google Gemini without exposing credentials to the client.
 - **Client-Side Compression:** Canvas-based image downscaling prevents payload bottlenecks and avoids 504 timeouts.
+- **Export Options:** One-click continuous ruled sheet print-to-PDF formatting and formatted Markdown (`.md`) export compatible with Notion, Obsidian, and GitHub.
 
 ---
 
